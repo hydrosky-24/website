@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monitoring-hidroponik-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: monitoring-hidroponik-frontend
+  template:
+    metadata:
+      labels:
+        app: monitoring-hidroponik-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: monitoring-frontend:latest
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: monitoring-hidroponik-frontend-service
+spec:
+  selector:
+    app: monitoring-hidroponik-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: LoadBalancer

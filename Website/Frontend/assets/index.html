@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring Hidroponik</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>
+    <h1>Monitoring Hidroponik</h1>
+    <p>Data Pengukuran Suhu, Kelembaban, pH, TDS, dan Kekeruhan</p>
+    <!-- Hamburger Menu -->
+    <div id="hamburgerMenu" class="hamburger-menu" onclick="toggleSidebar()">
+        &#9776; <!-- Icon Garis 3 -->
+    </div>
+</header>
+
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="row">
+            <div class="card">
+                <h3>Suhu</h3>
+                <label for="suhu">Suhu:</label>
+                <span id="suhu">25°C</span>
+            </div>
+            <div class="card">
+                <h3>Kelembaban</h3>
+                <label for="kelembaban">Kelembaban:</label>
+                <span id="kelembaban">60%</span>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="card">
+                <h3>Kekeruhan</h3>
+                <label for="kekeruhan">Kekeruhan (NTU):</label>
+                <meter id="kekeruhan" min="0" max="3000" value="1500"></meter>
+            </div>
+            <div class="card">
+                <h3>TDS</h3>
+                <label for="tds">TDS (ppm):</label>
+                <meter id="tds" min="0" max="1000" value="450"></meter>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="card">
+                <h3>pH</h3>
+                <label for="ph">pH:</label>
+                <span id="ph">6.5</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <p>&copy; 2025 Monitoring Hidroponik</p>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
