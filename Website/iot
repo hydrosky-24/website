@@ -1,0 +1,161 @@
+#include "DHT.h"
+
+// Definisi Pin
+#define DHT22_PIN 2
+#define PH_PIN A0
+#define TURBIDITY_PIN A1
+#define TDS_PIN A2
+
+DHT dht22(DHT22_PIN, DHT22);
+
+// Variabel untuk sensor pH
+float Po = 0;
+float PH_step;
+int nilai_analog_PH;
+double TeganganPh;
+
+// Kalibrasi sensor pH
+float PH4 = 1.704; // Tegangan untuk pH 4.01
+float PH7 = 1.914; // Tegangan untuk pH 7.00
+
+// Fungsi untuk membaca tingkat kekeruhan (NTU)
+float getTurbidityNTU() {
+  int sensorValue = analogRead(TURBIDITY_PIN); // Membaca nilai analog
+  float voltage = sensorValue * (5.0 / 1023.0); // Konversi ke tegangan
+
+  // Rumus kalibrasi dari datasheet SEN0189
+  float NTU = -1120.4 * pow(voltage, 2) + 5742.3 * voltage - 4352.9;
+
+  // Batasi NTU ke minimum 0
+  if (NTU < 0) {
+    NTU = 0;
+  }
+  return NTU;
+}
+
+// Fungsi untuk membaca TDS dalam ppm
+float convertToTDS(int analogValue) {
+  float voltage = analogValue * (5.0 / 1023.0); // Konversi nilai analog ke tegangan
+  float tdsValue = (133.42 * voltage * voltage * voltage - 255.86 * voltage * voltage + 857.39 * voltage) * 0.5; // Rumus konversi
+  return tdsValue;
+}
+
+void setup() {
+  Serial.begin(9600);
+
+  // Inisialisasi sensor DHT22
+  dht22.begin();
+  pinMode(PH_PIN, INPUT);         // Set pin pH sebagai input
+  pinMode(TURBIDITY_PIN, INPUT);  // Set pin turbidity sebagai input
+  pinMode(TDS_PIN, INPUT);        // Set pin TDS sebagai input
+
+  Serial.println("==========================================");
+  Serial.println("       SISTEM MONITORING KUALITAS AIR     ");
+  Serial.println("==========================================");
+}
+
+void loop() {
+  Serial.println("\n==========================================");
+  Serial.println("                 HASIL MONITORING          ");
+  Serial.println("==========================================");
+
+  // Membaca data dari sensor DHT22
+  float humi = dht22.readHumidity();
+  float tempC = dht22.readTemperature();
+  float tempF = dht22.readTemperature(true);
+
+  if (isnan(humi) || isnan(tempC) || isnan(tempF)) {
+    Serial.println(" Gagal membaca dari sensor DHT22!");
+  } else {
+    Serial.println("💧 Data Sensor DHT22");
+    Serial.println("------------------------------------------");
+    Serial.print("  🌡 Suhu: ");
+    Serial.print(tempC);
+    Serial.print("°C | ");
+    Serial.print(tempF);
+    Serial.println("°F");
+    Serial.print("  💦 Kelembapan: ");
+    Serial.print(humi);
+    Serial.println("%");
+    Serial.println("------------------------------------------");
+  }
+
+  // Membaca data dari sensor pH
+  nilai_analog_PH = analogRead(PH_PIN);
+  TeganganPh = 5.0 / 1024.0 * nilai_analog_PH; // Menghitung tegangan
+  PH_step = (PH4 - PH7) / 3; // Menghitung langkah pH
+  Po = 7.00 + ((PH7 - TeganganPh) / PH_step); // Menghitung nilai pH
+
+  Serial.println("Data Sensor pH");
+  Serial.println("------------------------------------------");
+  Serial.print("  ⚙ Nilai ADC: ");
+  Serial.println(nilai_analog_PH);
+  Serial.print("  🔋 Tegangan: ");
+  Serial.print(TeganganPh, 3);
+  Serial.println(" V");
+  Serial.print("  ?️ Nilai pH: ");
+  Serial.println(Po, 2);
+  Serial.println("------------------------------------------");
+
+  // Membaca data dari sensor turbidity
+  float turbidity = getTurbidityNTU();
+  Serial.println("🌊 Data Sensor Turbidity");
+  Serial.println("------------------------------------------");
+  Serial.print("  Turbidity (NTU): ");
+  Serial.println(turbidity);
+
+  // Menentukan tingkat kekeruhan
+  if (turbidity <= 1.0) {
+    Serial.println("  ✅ Air sangat jernih.");
+  } else if (turbidity > 1.0 && turbidity <= 3.0) {
+    Serial.println("  ✅ Air cukup jernih.");
+  } else if (turbidity > 3.0 && turbidity <= 5.0) {
+    Serial.println("  Air agak keruh.");
+  } else if (turbidity > 5.0 && turbidity <= 10.0) {
+    Serial.println("  Air keruh.");
+  } else {
+    Serial.println("  Air sangat keruh.");
+  }
+
+  // Peringatan untuk standar hidroponik
+  if (turbidity > 5.0) {
+    Serial.println("  Peringatan: Air terlalu keruh untuk hidroponik!");
+  } else {
+    Serial.println("  ✅ Air sesuai standar untuk hidroponik.");
+  }
+  Serial.println("------------------------------------------");
+
+  // Membaca data dari sensor TDS
+  int tdsValue = analogRead(TDS_PIN);
+  float tdsPPM = convertToTDS(tdsValue);
+  
+  Serial.println("------------------------------------------");
+  Serial.println("🔬 Data Sensor TDS");
+  Serial.println("------------------------------------------");
+  Serial.print("  🌡 TDS (ppm): ");
+  Serial.println(tdsPPM);
+
+  // Menampilkan ringkasan kualitas air
+  Serial.println("==========================================");
+  Serial.println("\n Rangkuman Kualitas Air:");
+  if (Po < 6.5 || Po > 7.5) {
+    Serial.println("  pH tidak ideal! (Standar: 6.5 - 7.5)");
+  } else {
+    Serial.println("  ✅ pH dalam kisaran ideal.");
+  }
+  if (turbidity > 5.0) {
+    Serial.println("  Air terlalu keruh! (Standar NTU < 5)");
+  } else {
+    Serial.println("  ✅ Tingkat kekeruhan sesuai standar.");
+  }
+  if (tdsPPM >= 300 && tdsPPM < 600) {
+    Serial.println("  Kualitas air sedang - Periksa lebih lanjut.");
+  } else if (tdsPPM >= 600) {
+    Serial.println("  Kualitas air buruk - Ganti air segera!");
+  } else {
+    Serial.println("  ✅ TDS dalam batas ideal.");
+  }
+
+  Serial.println("==========================================\n");
+  delay(5000); // Tunggu sebelum siklus berikutnya
+}
